@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cuộc Đua Khỉ Leo Núi 3D - Monkey Climbing Race</title>
+  <link rel="stylesheet" href="./src/style.css" />
+</head>
+<body>
+  <!-- 3D Canvas Container -->
+  <div id="canvas-container"></div>
+
+  <!-- Top Navigation & Controls Bar -->
+  <header class="glass-bar top-bar">
+    <div class="brand">
+      <span class="brand-icon">🐒</span>
+      <h1 class="brand-title">ĐUA KHỈ LEO NÚI 3D</h1>
+    </div>
+
+    <!-- Active Camera Status Indicator -->
+    <div class="cam-badge">
+      🎥 View Nhóm Dẫn Đầu
+    </div>
+
+    <!-- Quick Settings & Audio -->
+    <div class="action-controls">
+      <div class="speed-selector">
+        <label>Tầm nhìn:</label>
+        <select id="zoom-select" class="glass-select">
+          <option value="0.5">0.5x (Cực rộng)</option>
+          <option value="0.6" selected>0.6x (Góc rộng chuẩn)</option>
+          <option value="0.8">0.8x (Vừa)</option>
+          <option value="1.0">1.0x (Cận cảnh)</option>
+          <option value="custom" disabled hidden>Tùy chỉnh</option>
+        </select>
+      </div>
+
+      <div class="speed-selector">
+        <label>Đường đua:</label>
+        <select id="track-length-select" class="glass-select">
+          <option value="450">450m (Ngắn ~45s)</option>
+          <option value="800" selected>800m (Chuẩn ~1m15s)</option>
+          <option value="1200">1200m (Marathon ~2m)</option>
+        </select>
+      </div>
+
+      <div class="speed-selector">
+        <label>Tốc độ:</label>
+        <select id="speed-select" class="glass-select">
+          <option value="0.8">Chậm (0.8x)</option>
+          <option value="1" selected>Chuẩn (1.0x)</option>
+          <option value="1.5">Nhanh (1.5x)</option>
+          <option value="2">Siêu tốc (2.0x)</option>
+        </select>
+      </div>
+
+      <button class="icon-btn" id="btn-sound" title="Bật/Tắt âm thanh">🔊</button>
+      <button class="pill-btn active" id="btn-toggle-hud" title="Ẩn/Hiện Bảng Điểm">📊 Bảng Điểm</button>
+      <button class="primary-btn" id="btn-open-setup">⚙️ Cài Đặt / Thêm Tên</button>
+    </div>
+  </header>
+
+  <!-- Left Altitude Meter (Compact) -->
+  <div class="altitude-meter-container">
+    <div class="meter-label" id="meter-summit-label">🏆 800m</div>
+    <div class="meter-track" id="altitude-track">
+      <div class="meter-flag start">🏁 0m</div>
+      <div id="meter-dots"></div>
+    </div>
+    <div class="meter-label">XUẤT PHÁT</div>
+  </div>
+
+  <!-- Right Live Leaderboard (Compact, Translucent, Collapsible) -->
+  <aside class="glass-panel leaderboard-panel" id="leaderboard-panel">
+    <div class="panel-header">
+      <div class="panel-title-group">
+        <h3>📊 TOP DẪN ĐẦU</h3>
+        <span class="badge" id="player-count-badge">0 người</span>
+      </div>
+      <button class="panel-close-btn" id="btn-close-leaderboard" title="Thu gọn bảng điểm để xem toàn màn hình">✕</button>
+    </div>
+    <div class="leaderboard-list" id="leaderboard-list">
+      <!-- Injected compact items -->
+    </div>
+  </aside>
+
+  <!-- Giant Countdown Overlay -->
+  <div id="countdown-overlay" class="hidden">
+    <div id="countdown-text">3</div>
+  </div>
+
+  <!-- Setup & Names Input Modal -->
+  <div id="setup-modal" class="modal-overlay">
+    <div class="modal-box glass-card">
+      <div class="modal-header">
+        <h2>🐒 Thiết Lập Cuộc Đua Khỉ Leo Núi</h2>
+        <button class="close-btn" id="btn-close-setup">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <label for="names-input">
+          <strong>Danh sách người tham gia:</strong>
+          <span class="sub-text">(Mỗi dòng một tên hoặc dán từ Excel)</span>
+        </label>
+        <textarea id="names-input" rows="8" placeholder="Nhập tên người tham gia...&#10;Alex&#10;Sarah&#10;Minh&#10;Lan&#10;John"></textarea>
+
+        <!-- Quick Sample Presets -->
+        <div class="preset-buttons">
+          <span>Mẫu nhanh:</span>
+          <button class="chip-btn" id="btn-preset-20">20 Người</button>
+          <button class="chip-btn" id="btn-preset-50">50 Người</button>
+          <button class="chip-btn" id="btn-preset-100">100 Người</button>
+          <button class="chip-btn danger" id="btn-clear-names">Xóa hết</button>
+        </div>
+
+        <div class="options-grid">
+          <div class="option-item">
+            <label>🏔️ Độ dài đường đua:</label>
+            <select id="modal-track-length-select" class="glass-select">
+              <option value="450">450m (Ngắn ~45 giây)</option>
+              <option value="800" selected>800m (Tiêu chuẩn ~1m15s)</option>
+              <option value="1200">1200m (Marathon ~2 phút)</option>
+            </select>
+          </div>
+          <div class="option-item">
+            <label>⏱️ Nhịp độ cuộc đua:</label>
+            <select id="duration-select" class="glass-select">
+              <option value="short">Nhanh kịch tính</option>
+              <option value="medium" selected>Tiêu chuẩn</option>
+              <option value="long">Dài & Giằng co</option>
+            </select>
+          </div>
+          <div class="option-item">
+            <label>💥 Tần suất bẫy đá & chuối tăng tốc:</label>
+            <select id="hazard-rate-select" class="glass-select">
+              <option value="low">Ít va chạm</option>
+              <option value="normal" selected>Bình thường</option>
+              <option value="high">Hỗn loạn / Bất ngờ cao</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="secondary-btn" id="btn-cancel-setup">Hủy</button>
+        <button class="start-btn" id="btn-start-race">🚀 BẮT ĐẦU CUỘC ĐUA</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Winner & Podium Modal -->
+  <div id="winner-modal" class="modal-overlay hidden">
+    <div class="modal-box glass-card victory-card">
+      <div class="victory-header">
+        <div class="confetti-icon">🎉</div>
+        <h2>🏆 CHÚC MỪNG CHIẾN THẮNG! 🏆</h2>
+        <p>Những chú khỉ xuất sắc nhất đã chinh phục đỉnh núi tuyết!</p>
+      </div>
+
+      <div class="podium-container" id="podium-display">
+        <div class="podium-slot rank-2">
+          <div class="medal">🥈</div>
+          <div class="podium-name" id="podium-name-2">-</div>
+          <div class="podium-time" id="podium-time-2">-</div>
+          <div class="podium-pillar">2</div>
+        </div>
+
+        <div class="podium-slot rank-1">
+          <div class="crown">👑</div>
+          <div class="medal">🥇</div>
+          <div class="podium-name" id="podium-name-1">-</div>
+          <div class="podium-time" id="podium-time-1">-</div>
+          <div class="podium-pillar">1</div>
+        </div>
+
+        <div class="podium-slot rank-3">
+          <div class="medal">🥉</div>
+          <div class="podium-name" id="podium-name-3">-</div>
+          <div class="podium-time" id="podium-time-3">-</div>
+          <div class="podium-pillar">3</div>
+        </div>
+      </div>
+
+      <div class="results-table-container">
+        <h4>📋 Bảng Xếp Hạng Chi Tiết</h4>
+        <div class="results-table" id="full-results-list"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="secondary-btn" id="btn-copy-results">📋 Sao Chép Kết Quả</button>
+        <button class="primary-btn" id="btn-restart-race">🔄 Đua Lại Vòng Này</button>
+        <button class="start-btn" id="btn-new-race">➕ Cuộc Đua Mới</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
